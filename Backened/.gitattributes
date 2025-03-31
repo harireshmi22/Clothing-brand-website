@@ -1,0 +1,17 @@
+# Auto-detect line endings for all files
+* text=auto
+
+# Force LF for code/text files
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.ts   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+
+# Explicitly mark binary files
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.woff binary
