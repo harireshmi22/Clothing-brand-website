@@ -14,8 +14,6 @@ const EditProductPage = () => {
     const { id } = useParams();
     const { productDetails, isLoading, error } = useSelector((state) => state.products);
 
-    const [uploading, setUploading] = useState(false);
-
     const [productData, setProductData] = useState({
         name: "",
         description: "",
@@ -38,7 +36,11 @@ const EditProductPage = () => {
 
     useEffect(() => {
         if (productDetails) {
-            setProductData(productDetails);
+            // Filter out invalid images from backend
+            const filteredImages = (productDetails.images || []).filter(
+                img => img && img.url && typeof img.url === 'string' && img.url.trim() !== ""
+            );
+            setProductData({ ...productDetails, images: filteredImages });
         }
     }, [productDetails]);
 
@@ -53,33 +55,42 @@ const EditProductPage = () => {
         const formData = new FormData();
         formData.append("image", file);
         try {
-            const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload`, formData,
-                {
-                    headers: { "Content-Type": "multipart/form-data" }
-                }
+            const { data } = await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/api/upload`,
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
             );
-            setProductData((prevData) => ({
-                ...prevData,
-                images: [...prevData.images, { url: data.url, altText: "" }],
-            }));
-            setUploading(false);
+            if (data.imageUrl && typeof data.imageUrl === 'string' && data.imageUrl.trim() !== "") {
+                setProductData((prevData) => ({
+                    ...prevData,
+                    images: [...prevData.images, { url: data.imageUrl, altText: "" }],
+                }));
+            }
         } catch (error) {
             console.error("Error uploading image:", error);
-            setUploading(false);
         }
     }
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        dispatch(updateProduct({ id, productData }));
+        // Filter out images with no url or empty url
+        const filteredImages = (productData.images || []).filter(
+            img => img.url && typeof img.url === 'string' && img.url.trim() !== ""
+        );
+        dispatch(updateProduct({ id, productData: { ...productData, images: filteredImages } }));
         navigate(`/admin/products`);
     }
 
     const handleDeleteImage = (index) => {
-        setProductData((prevData) => ({
-            ...prevData,
-            images: prevData.images.filter((_, i) => i !== index),
-        }));
+        setProductData((prevData) => {
+            const newImages = prevData.images.filter((_, i) => i !== index);
+            // Debug: log the images after deletion
+            console.log("Images after delete:", newImages);
+            return {
+                ...prevData,
+                images: newImages,
+            };
+        });
     }
 
     if (isLoading) {
@@ -89,6 +100,9 @@ const EditProductPage = () => {
     if (error) {
         return <div>Error: {error}</div>;
     }
+
+    // Debug: log the images array on every render
+    console.log("Current images (render):", productData.images);
 
     return (
         <div className="max-w-5xl mx-auto p-6 shadow-md rounded-md">
@@ -159,9 +173,8 @@ const EditProductPage = () => {
                 <div className="mb-6">
                     <label className="block font-semibold mb-2">Upload Image</label>
                     <input type="file" onChange={handleImageUpload} />
-                    {uploading && <p>Uploading...</p>}
                     <div className="flex gap-4 mt-4">
-                        {(productData.images || []).map((image, index) => (
+                        {(productData.images || []).filter(img => img.url && img.url.trim() !== "").map((image, index) => (
                             <div key={index} className="relative">
                                 <img
                                     src={image.url}
