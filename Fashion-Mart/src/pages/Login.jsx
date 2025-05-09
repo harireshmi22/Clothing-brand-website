@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import login from "../assets/login.webp";
+import { loginUser } from '../redux/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { mergeCart } from '../redux/slices/cartSlice';
+// import statement removed or completed
 
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const {user, guestId} = useSelector((state) => state.auth);
+    const {cart} = useSelector((state) => state.cart);
+
+    // Get the redirect path from the URL query parameters
+    const redirect = new URLSearchParams(location.search).get("redirect") || "/";
+    const isCheckoutRedirect = redirect.includes("checkout");
+
+    useEffect(() => {
+        if (user) {
+            if(cart?.products.length > 0 && guestId) {
+                dispatch(mergeCart({user, guestId}));
+                navigate(isCheckoutRedirect ? "/checkout" : "/");
+            } else {
+                navigate(isCheckoutRedirect ? "/checkout" : "/");
+            }
+        }
+    }, [user, guestId, cart, isCheckoutRedirect, navigate, dispatch]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("User Registered:", { email, password })
+        console.log("User Registered:", { email, password }); 
+        dispatch(loginUser({ email, password })); 
     }
 
     return (
@@ -39,7 +64,7 @@ const Login = () => {
                     hover:bg-gray-800">Sign In</button>
                     <p className="mt-6 text-center text-sm">
                         Don't have an account? {""}
-                        <Link to="/register" className="text-blue-500">Register</Link>
+                        <Link to={`/register?redirected=${encodeURIComponent(redirect)}`} className="text-blue-500">Register</Link>
                     </p>
                 </form>
             </div>
@@ -53,4 +78,4 @@ const Login = () => {
     )
 }
 
-export default Login
+export default Login; 

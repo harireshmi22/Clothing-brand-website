@@ -1,42 +1,31 @@
-import React from 'react'
-
-const checkout = {
-    _id: "1223",
-    createdAt: new Date(),
-    checkoutItems: [
-        {
-            productId: "1",
-            name: "Jacket",
-            color: "black",
-            size: "M",
-            price: 150,
-            quantity: 1,
-            image: "https://picsum.photos/150?random=1",
-        },
-        {
-            productId: "2",
-            name: "T-shirt",
-            color: "black",
-            size: "M",
-            price: 120,
-            quantity: 2,
-            image: "https://picsum.photos/150?random=4",
-        }
-    ],
-    shippingAddress: {
-        address: "123 Fashion Street",
-        city: "New York",
-        country: "USA",
-    },
-};
-
-
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
+import { clearCart } from '../redux/slices/cartSlice'; // Adjust the path as needed
+import { useNavigate } from 'react-router-dom';
 
 const OrderConfirmationPage = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const checkoutState = useSelector((state) => state.checkout);
+    const checkout = checkoutState?.checkout;
+
+    useEffect(() => {
+        // Only clear cart and localStorage if we have a valid checkout
+        if (checkout?._id) {
+            dispatch(clearCart());
+            localStorage.removeItem("cart");
+        } else {
+            navigate("/my-orders");
+        }
+    }, [checkout, dispatch, navigate]);
+
+    if (!checkout) {
+        return null; // or return a loading state
+    }
 
     const calculateEstimatedDelivery = (createdAt) => {
         const orderDate = new Date(createdAt);
-        orderDate.setDate(orderDate.getDate() + 10) // Add 10 days to the order date
+        orderDate.setDate(orderDate.getDate() + 10); // Add 10 days to the order date
         return orderDate.toLocaleDateString();
     }
 
@@ -67,15 +56,22 @@ const OrderConfirmationPage = () => {
                 {/* Order Items */}
                 <div className="mb-20">
                     {checkout.checkoutItems.map((item) => (
-                        <div key={item.productId} className="flex itmes-center mb-4">
-                            <div>
-                                <img src={item.image} alt={item.name} className="w-16 h-16 object rounded-md mr-4" />
-                                <h4 className="text-md font-semibold">{item.name}</h4>
-                                <p className="text-sm text-gray-500">
-                                    {item.color} | {item.size}
-                                </p>
+                        <div key={item.productId} className="flex items-center mb-4">
+                            <div className="flex items-center flex-grow">
+                                <img 
+                                    src={item.images?.[0]?.url || item.image} 
+                                    alt={item.name} 
+                                    className="w-16 h-16 object-cover rounded-md mr-4" 
+                            
+                                />
+                                <div>
+                                    <h4 className="text-md font-semibold">{item.name}</h4>
+                                    <p className="text-sm text-gray-500">
+                                        {item.color} | {item.size}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="ml-auto text-right">
+                            <div className="text-right">
                                 <p className="text-md">${item.price}</p>
                                 <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                             </div>
@@ -107,4 +103,4 @@ const OrderConfirmationPage = () => {
     );
 };
 
-export default OrderConfirmationPage; 
+export default OrderConfirmationPage;

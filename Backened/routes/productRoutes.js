@@ -1,6 +1,7 @@
 const express = require("express");
 const Product = require("../models/Product");
 const { protect, admin } = require("../middleware/authMiddleware");
+const mongoose = require("mongoose"); // Import mongoose for ObjectId validation
 
 const router = express.Router();
 
@@ -60,7 +61,7 @@ router.post("/", protect, admin, async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).send("Server Error");
+        res.status(500).json({ message: "Server Error", error: error.message });
     }
 });
 
@@ -125,20 +126,213 @@ router.put("/:id", protect, admin, async (req, res) => {
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server Error", error: error.message });
     }
 });
 
 // @route DELETE /api/products/:id
 // @desc DELETE a product by ID
 // @access Private/Admin 
+
 router.delete("/:id", protect, admin, async (req, res) => {
     try {
         // Find the product by ID 
-        
-    } catch(error) {
+        const product = await Product.findById(req.params.id);
 
+        if (product) {
+            // Remove from the database DB
+            await product.deleteOne();
+            res.json({ message: "Product removed" });
+        } else {
+            res.status(404).json({ message: "Product not found" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+});
+
+// @route GET /api/products
+// @desc Get all products with optional query filters
+// @access Public 
+
+router.get("/", async (req, res) => {
+    try {
+        const { collection, size, color, gender, minPrice, maxPrice, sortBy,
+            search, category, material, brand, limit
+        } = req.query;
+
+        let query = {};
+
+        // Filter Logic 
+        if (collection && collection.toLowerCase() !== "all") {
+            query.collections = collection;
+        }
+
+        if (category && category.toLowerCase() !== "all") {
+            query.category = category;
+        }
+
+        if (material) {
+            query.material = { $in: material.split(",") };
+        }
+
+        if (brand) {
+            query.brand = { $in: brand.split(",") };
+        }
+
+        if (size) {
+            query.sizes = { $in: size.split(",") };
+        }
+
+        if (color) {
+            query.colors = { $in: color.split(",") };
+        }
+
+        if (gender) {
+            query.gender = gender;
+        }
+
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
+        }
+
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Build sort object
+        let sort = {};
+        if (sortBy) {
+            switch (sortBy) {
+                case 'price-asc':
+                    sort = { price: 1 };
+                    break;
+                case 'price-desc':
+                    sort = { price: -1 };
+                    break;
+                case 'newest':
+                    sort = { createdAt: -1 };
+                    break;
+                default:
+                    sort = { createdAt: -1 };
+            }
+        }
+
+        // Execute query with pagination
+        const products = await Product.find(query)
+            .sort(sort)
+            .limit(limit ? Number(limit) : 0);
+
+        res.json(products);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+});
+
+router.get("/best-seller", async (req, res) => {
+    try {
+        const bestSeller = await Product.findOne().sort({ rating: -1 });
+
+        if (bestSeller) {
+            res.json(bestSeller);
+        } else {
+            res.status(404).json({ message: "No best seller found" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+});
+
+// @route GET /api/products/new-arrivals 
+// @route desc Retrieve latest 8 products - Creation Date 
+// @route Public 
+router.get("/new-arrivals", async (req, res) => {
+    try {
+        // fetch latest 8 product
+        const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(8);
+        res.json(newArrivals);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error: error.message });
     }
 })
+
+
+// @route GET /api/product/:id
+// @desc Get a single product by ID
+// @access Public
+router.get("/:id", async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (product) {
+            res.json(product);
+        } else {
+            res.status(404).json({ message: "Product not found" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+});
+
+// @route GET /api/products/similar/:id
+// @desc Retrieve similar products based on the current product's gender and category
+// @access Public
+router.get("/similar/:id", async (req, res) => {
+    const { id } = req.params;
+
+    // Validate if the id is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    try {
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        // Ensure gender and category exist before querying
+        const { gender, category } = product;
+        if (!gender || !category) {
+            return res.status(400).json({ message: "Product does not have gender or category information" });
+        }
+
+        const similarProducts = await Product.find({
+            _id: { $ne: id }, // Exclude the current product ID
+            gender: product.gender,
+            category: product.category,
+        }).limit(4);
+
+        res.json(similarProducts);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+});
+
+// Bulk insert products
+router.post('/bulk-insert', async (req, res) => {
+    try {
+        const products = req.body;
+        if (!Array.isArray(products)) {
+            return res.status(400).json({ message: 'Input should be an array of products' });
+        }
+        const result = await Product.insertMany(products);
+        res.status(201).json({ message: `${result.length} products inserted!`, data: result });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 module.exports = router;

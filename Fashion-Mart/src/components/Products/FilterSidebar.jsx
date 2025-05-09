@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Correct import from react-router-dom
+import { useNavigate, useLocation } from "react-router-dom";
+import { Range } from "react-range";
 
 const FilterSidebar = () => {
-  const location = useLocation(); // to access the current location
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [filters, setFilters] = useState({
@@ -16,8 +17,6 @@ const FilterSidebar = () => {
     maxPrice: 100,
   });
 
-  const [priceRange, setPriceRange] = useState([0, 100]);
-
   const categories = ["Top Wear", "Bottom Wear"];
   const colors = [
     "Red", "Blue", "Black", "Green", "Yellow", "Gray", "White", "Pink", "Beige", "Navy",
@@ -28,7 +27,7 @@ const FilterSidebar = () => {
   const genders = ["Men", "Women"];
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search); // Get the query string from the current location
+    const params = new URLSearchParams(location.search);
     setFilters({
       category: params.get("category") || "",
       gender: params.get("gender") || "",
@@ -36,11 +35,9 @@ const FilterSidebar = () => {
       size: params.get("size") ? params.get("size").split(",") : [],
       material: params.get("material") ? params.get("material").split(",") : [],
       brand: params.get("brand") ? params.get("brand").split(",") : [],
-      minPrice: params.get("minPrice") || 0,
-      maxPrice: params.get("maxPrice") || 100,
+      minPrice: Number(params.get("minPrice")) || 0,
+      maxPrice: Number(params.get("maxPrice")) || 100,
     });
-
-    setPriceRange([0, params.get("maxPrice") || 100]);
   }, [location.search]);
 
   const handleFilterChange = (e) => {
@@ -66,21 +63,12 @@ const FilterSidebar = () => {
     Object.keys(newFilters).forEach((key) => {
       if (Array.isArray(newFilters[key]) && newFilters[key].length > 0) {
         params.append(key, newFilters[key].join(","));
-      } else if (newFilters[key]) {
+      } else if (newFilters[key] !== "" && newFilters[key] !== undefined && newFilters[key] !== null) {
         params.append(key, newFilters[key]);
       }
     });
 
     navigate(`?${params.toString()}`);
-  };
-
-
-  const handlePriceChange = (e) => {
-    const newPrice = e.target.value; 
-    setPriceRange([0, newPrice]);
-    const newFilters = { ...filters, minPrice: 0, maxPrice: newPrice };
-    setFilters(filters);
-    updateURLParams(newFilters);
   };
 
   return (
@@ -165,10 +153,10 @@ const FilterSidebar = () => {
         {materials.map((material) => (
           <div key={material} className="flex items-center mb-1">
             <input
-              type="checkbox"  // Using radio for single selection
-              name="material"  // Ensure name is the same for the group
+              type="checkbox"
+              name="material"
               value={material}
-              checked={filters.material.includes(material)}  // If the material is selected, it will be checked
+              checked={filters.material.includes(material)}
               onChange={handleFilterChange}
               className="mr-2 h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
             />
@@ -177,40 +165,76 @@ const FilterSidebar = () => {
         ))}
       </div>
 
-
-     {/* Brand Filter */}
-<div className="mb-6">
-  <label className="block text-gray-600 font-medium mb-2">Brands</label>
-  {brands.map((brand) => (
-    <div key={brand} className="flex items-center mb-1">
-      <input
-        type="checkbox"
-        name="brand"
-        value={brand}
-        onChange={handleFilterChange}
-        checked={filters.brand.includes(brand)}
-        className="mr-2 h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
-      />
-      <span className="text-gray-700">{brand}</span>
-    </div>
-  ))}
-</div>
+      {/* Brand Filter */}
+      <div className="mb-6">
+        <label className="block text-gray-600 font-medium mb-2">Brands</label>
+        {brands.map((brand) => (
+          <div key={brand} className="flex items-center mb-1">
+            <input
+              type="checkbox"
+              name="brand"
+              value={brand}
+              onChange={handleFilterChange}
+              checked={filters.brand.includes(brand)}
+              className="mr-2 h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
+            />
+            <span className="text-gray-700">{brand}</span>
+          </div>
+        ))}
+      </div>
 
       {/* Price Range Filter */}
       <div className="mb-8">
         <label className="block text-gray-600 font-medium mb-2">Price Range</label>
-        <input
-          type="range"
-          name="priceRange"
-          min={0}
-          max={100}
-          className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-          value={priceRange[1]}
-          onChange={handlePriceChange}
-        />
-        <div className="flex justify-between text-gray-600 mt-2">
-          <span>$0</span>
-          <span>${priceRange[1]}</span>
+        <div className="px-2 py-4">
+          <Range
+            step={1}
+            min={0}
+            max={100}
+            values={[filters.minPrice, filters.maxPrice]}
+            onChange={([min, max]) => {
+              const newFilters = { ...filters, minPrice: min, maxPrice: max };
+              setFilters(newFilters);
+              updateURLParams(newFilters);
+            }}
+            renderTrack={({ props, children }) => (
+              <div
+                {...props}
+                style={{
+                  ...props.style,
+                  height: '6px',
+                  width: '100%',
+                  background: 'linear-gradient(to right, #d1d5db, #3b82f6)',
+                  borderRadius: '4px',
+                  margin: '20px 0'
+                }}
+              >
+                {children}
+              </div>
+            )}
+            renderThumb={({ props, index }) => (
+              <div
+                {...props}
+                style={{
+                  ...props.style,
+                  height: '24px',
+                  width: '24px',
+                  borderRadius: '50%',
+                  backgroundColor: '#3b82f6',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  boxShadow: '0 2px 6px #AAA'
+                }}
+              >
+                <span className="text-white text-xs font-bold">{[filters.minPrice, filters.maxPrice][index]}</span>
+              </div>
+            )}
+          />
+          <div className="flex justify-between text-gray-600 mt-2">
+            <span>${filters.minPrice}</span>
+            <span>${filters.maxPrice}</span>
+          </div>
         </div>
       </div>
     </div>

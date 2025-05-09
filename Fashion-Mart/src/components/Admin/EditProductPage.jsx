@@ -1,6 +1,21 @@
 import React, { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { fetchProductDetails } from '../../redux/slices/productsSlice';
+import axios from 'axios';
+import { useEffect } from 'react';
+import { updateProduct } from '../../redux/slices/adminProductSlice';
+
 
 const EditProductPage = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { id } = useParams();
+    const { productDetails, isLoading, error } = useSelector((state) => state.products);
+
+    const [uploading, setUploading] = useState(false);
+
     const [productData, setProductData] = useState({
         name: "",
         description: "",
@@ -14,15 +29,19 @@ const EditProductPage = () => {
         collections: "",
         material: "",
         gender: "",
-        images: [
-            {
-                url: "https://picsum.photos/150?random=1",
-            },
-            {
-                url: "https://picsum.photos/150?random=2",
-            }
-        ]
+        images: []
     })
+
+    useEffect(() => {
+        dispatch(fetchProductDetails(id));
+    }, [dispatch, id]);
+
+    useEffect(() => {
+        if (productDetails) {
+            setProductData(productDetails);
+        }
+    }, [productDetails]);
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -31,12 +50,44 @@ const EditProductPage = () => {
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
-        console.log(file);
+        const formData = new FormData();
+        formData.append("image", file);
+        try {
+            const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/upload`, formData,
+                {
+                    headers: { "Content-Type": "multipart/form-data" }
+                }
+            );
+            setProductData((prevData) => ({
+                ...prevData,
+                images: [...prevData.images, { url: data.url, altText: "" }],
+            }));
+            setUploading(false);
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            setUploading(false);
+        }
     }
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(productData);
+        dispatch(updateProduct({ id, productData }));
+        navigate(`/admin/products`);
+    }
+
+    const handleDeleteImage = (index) => {
+        setProductData((prevData) => ({
+            ...prevData,
+            images: prevData.images.filter((_, i) => i !== index),
+        }));
+    }
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return <div>Error: {error}</div>;
     }
 
     return (
@@ -46,7 +97,7 @@ const EditProductPage = () => {
                 {/* Name */}
                 <div className="mb-6">
                     <label className="block font-semibold mb-2">Product Name</label>
-                    <input type="text" name="name" value={productData.name} onChange={handleChange}
+                    <input type="text" name="name" value={productData.name || ''} onChange={handleChange}
                         className="w-full border border-gray-300 rounded-md p-2 required" />
                 </div>
 
@@ -85,7 +136,7 @@ const EditProductPage = () => {
                 {/* Sizes */}
                 <div className="mb-6">
                     <label className="block font-semibold mb-2">Sizes (comma-separated)</label>
-                    <input type="text" name="sizes" value={productData.sizes.join(", ")}
+                    <input type="text" name="sizes" value={(productData.sizes || []).join(", ")}
                         onChange={(e) => setProductData({
                             ...productData,
                             sizes: e.target.value.split(",").map((size) => size.trim())
@@ -96,10 +147,10 @@ const EditProductPage = () => {
                 {/* Colors */}
                 <div className="mb-6">
                     <label className="block font-semibold mb-2">Colors (comma-separated)</label>
-                    <input type="text" name="colors" value={productData.colors.join(", ")}
+                    <input type="text" name="colors" value={(productData.colors || []).join(", ")}
                         onChange={(e) => setProductData({
                             ...productData,
-                            colors: e.target.value.split(",").map((colors) => colors.trim())
+                            colors: e.target.value.split(",").map((color) => color.trim())
                         })}
                         className="w-full border border-gray-300 rounded-md p-2" />
                 </div>
@@ -108,11 +159,23 @@ const EditProductPage = () => {
                 <div className="mb-6">
                     <label className="block font-semibold mb-2">Upload Image</label>
                     <input type="file" onChange={handleImageUpload} />
+                    {uploading && <p>Uploading...</p>}
                     <div className="flex gap-4 mt-4">
-                        {productData.images.map((image, index) => (
-                            <div key={index} className="">
-                                <img src={image.url} alt={image.altText || "Product Image"}
-                                    className="w-20 h-20 object-cover rounded-md shadow-md" />
+                        {(productData.images || []).map((image, index) => (
+                            <div key={index} className="relative">
+                                <img
+                                    src={image.url}
+                                    alt={image.altText || "Product Image"}
+                                    className="w-20 h-20 object-cover rounded-md shadow-md"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteImage(index)}
+                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                                    title="Delete image"
+                                >
+                                    &times;
+                                </button>
                             </div>
                         ))}
                     </div>

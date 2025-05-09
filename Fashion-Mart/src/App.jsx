@@ -19,38 +19,49 @@ import UserManagement from './components/Admin/UserManagement';
 import ProductManagement from './components/Admin/ProductManagement';
 import EditProductPage from './components/Admin/EditProductPage';
 import OrderManagement from './components/Admin/OrderManagement';
+import { Provider } from 'react-redux';
+import { store } from './redux/store';
+import { useParams } from "react-router-dom";
+import ProtectedRoute from './components/Common/ProtectedRoute';
 
 function App() {
-  return (
-    // We are using router for enable client side routing 
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}> {/* To help us to route the pages  */}
-      <Toaster position="top-right" />
-      <Routes>
-        <Route path="/" element={<UserLayout />}>
-          {/* User Layout */}
-          <Route index element={<Home />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="collections/:collection" element={<CollectionPage />} />
-          <Route path="product/:id" element={<ProductDetails />} />
-          <Route path="checkout" element={<Checkout />} />
-          <Route path="order-confirmation" element={<OrderConfirmationPage />} />
-          <Route path="my-orders" element={<MyOrdersPage />} />
-          <Route path="order/:id" element={<OrderDetailsPage />} />
-        </Route>
+  const params = useParams();
+  console.log("Params:", params);
 
-        {/* Admin Layout */}
-        <Route path="/admin" element={<AdminLayout />}>
-          {/* Add admin routes here */}
-          <Route index element={<AdminHomePage />}></Route>
-          <Route path="users" element={<UserManagement />}></Route>
-          <Route path="products" element={<ProductManagement />}></Route>
-          <Route path="products/:id/edit" element={<EditProductPage />}></Route>
-          <Route path='orders' element={<OrderManagement />}></Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+  return (
+    <Provider store={store}>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Toaster position="top-right" />
+        <Routes>
+          <Route path="/" element={<UserLayout />}>
+            {/* User Layout */}
+            <Route index element={<Home />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="collections/:collection" element={<CollectionPage />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="order-confirmation" element={<OrderConfirmationPage />} />
+            <Route path="my-orders" element={<MyOrdersPage />} />
+            <Route path="order/:id" element={<OrderDetailsPage />} />
+          </Route>
+
+          {/* Admin Layout */}
+          <Route path="/admin" element={
+            <ProtectedRoute role="admin">
+              <AdminLayout />
+            </ProtectedRoute>}>
+            {/* Add admin routes here */}
+            <Route index element={<AdminHomePage />}></Route>
+            <Route path="users" element={<UserManagement />}></Route>
+            <Route path="products" element={<ProductManagement />}></Route>
+            <Route path="products/:id/edit" element={<EditProductPage />}></Route>
+            <Route path='orders' element={<OrderManagement />}></Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   );
 }
 

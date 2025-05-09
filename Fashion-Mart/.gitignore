@@ -1,40 +1,38 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# ========================
+# 🚀 BACKEND IGNORES (Node.js)
+# ========================
+node_modules/       # HUGE folder, don't upload!
+package-lock.json   # Auto-generated, no need
+npm-debug.log*      # Error logs
+yarn-error.log*     # Yarn logs (if used)
+.env                # SECRETS! (Database passwords, API keys)
+.env.local          # Local overrides (also secret!)
+.env.development    # Dev environment config
+.env.test           # Test environment config
+.env.production     # Production config (secret!)
 
-node_modules
-dist
-dist-ssr
-*.local
+# ========================
+# 🎨 FRONTEND IGNORES (React/Vite/Next.js)
+# ========================
+.env                # Frontend secrets (API URLs, keys)
+.env.local          # Local frontend config
+.env.development    # Dev config
+.env.production     # Prod config (might contain secrets)
+dist/               # Built files (can be regenerated)
+.cache/             # Vite/Next.js cache folder
+.temp/              # Temporary files
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# ========================
+# 🖥️ SYSTEM & EDITOR FILES
+# ========================
+.DS_Store           # Annoying Mac file
+Thumbs.db           # Annoying Windows file
+.idea/              # JetBrains IDE (WebStorm, PHPStorm)
+.vscode/            # VS Code settings (personal preference)
 
-# Dependencies
-node_modules/
-npm-debug.log
-
-# Environment variables
-.env
-.env.local
-
-# IDE files
-.vscode/
-.idea/
-
-# Build folders
-dist/
-build/
+# ========================
+# 📝 LOGS & TEMP FILES
+# ========================
+*.log               # All log files
+logs/               # Logs folder (if you have one)
+tmp/                # Temporary files

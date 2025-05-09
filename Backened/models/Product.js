@@ -48,7 +48,10 @@ const productSchema = new mongoose.Schema({
     },
     material: {
         type: String,
-        enum: ["Men", "Women", "Unisex"],
+        material: {
+            type: String,
+            enum: ["Men", "Women", "Unisex", "Cotton", "Cotton Blend", "Denim", "Viscose", "Fleece", "Polyester", "Linen Blend", "Wool Blend", "Silk Blend"],
+        },
     },
     images: [{
         url: {
