@@ -1,0 +1,57 @@
+# Node modules
+node_modules/
+Backened/node_modules/
+Fashion-Mart/node_modules/
+
+# Environment variables
+.env
+Backened/.env
+Fashion-Mart/.env
+
+# Build output
+/dist/
+/build/
+Fashion-Mart/src/output.css
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Dependency directories
+jspm_packages/
+
+# Optional: Ignore lock files (uncomment if you don't want to track them)
+# package-lock.json
+# Backened/package-lock.json
+# Fashion-Mart/package-lock.json
+
+# Misc
+*.tgz
+
+# Ignore coverage reports
+coverage/
+
+# Ignore local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+Fashion-Mart/.env.local
+Fashion-Mart/.env.development.local
+Fashion-Mart/.env.test.local
+Fashion-Mart/.env.production.local 
