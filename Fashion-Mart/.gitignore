@@ -1,10 +1,12 @@
 # Node modules
 node_modules/
 Backened/node_modules/
+Fashion-Mart/node_modules/
 
 # Environment variables
 .env
 Backened/.env
+Fashion-Mart/.env
 
 # Build output
 /dist/
@@ -36,6 +38,7 @@ jspm_packages/
 # Optional: Ignore lock files (uncomment if you don't want to track them)
 # package-lock.json
 # Backened/package-lock.json
+# Fashion-Mart/package-lock.json
 
 # Misc
 *.tgz
@@ -47,4 +50,8 @@ coverage/
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+Fashion-Mart/.env.local
+Fashion-Mart/.env.development.local
+Fashion-Mart/.env.test.local
+Fashion-Mart/.env.production.local 
